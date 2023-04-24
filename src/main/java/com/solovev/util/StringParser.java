@@ -2,45 +2,88 @@ package com.solovev.util;
 
 import java.util.ArrayDeque;
 import java.util.Deque;
-import java.util.Set;
+import java.util.Map;
+import java.util.Objects;
+import java.util.prefs.InvalidPreferencesFormatException;
 
 /**
  * A Class to pass through Json strings and create Strings of separate objects or arrays
  */
 public class StringParser {
-    private final Set<Character> SetOfOpening = Set.of('[', '{');
-    private final char delimiter = ',';
-    private final Set<Character> SetOfClosing = Set.of(']', '}');
-    //TODO add check for parenthesis correctness
+    private final Map<Character, Character> mapOfParenthesis;
+    private final char delimiter;
+
+    /**
+     * Constructor that creates object with set of possible open and close parenthesis
+     *
+     * @param map       - map where key is OPEN value, for ex: '[','{' etc, and value is corresponding close parenthesis for ex: ']',}'
+     * @param delimiter - delimiter used to separate values, for ex; ','
+     */
+    public StringParser(Map<Character, Character> map, char delimiter) {
+        this.delimiter = delimiter;
+        this.mapOfParenthesis = map;
+    }
+
     /**
      * Method that parse the arrayOfChars and builds a new arrayOfChars, that will include all objects of the old one;
      * example in readme paragraph 5.
-     * Method doesnot check for Parenthesis correctness. Example: "[[}]" will be parsed, and strings without closing brackets or delimiters will be parsed to the end
+     * Method doesn't check for Parenthesis correctness. Example: "[[}]" will be parsed, and strings without closing brackets or delimiters will be parsed to the end
      *
      * @param arrayOfChars original arrayOfChars to parse
      * @param indexToStart indexToStart to start with, should be > 0, and less than String.length()
      * @return string that includes a field or an object in the old one
+     * @throws IndexOutOfBoundsException if parenthesis are Incorrect Example: "[[}]" will throw exception
      */
-    public String parse(char[] arrayOfChars, int indexToStart) {
+    public String parse(char[] arrayOfChars, int indexToStart) throws InvalidPreferencesFormatException {
         StringBuilder resultString = new StringBuilder();
         Deque<Character> openingBrackets = new ArrayDeque<>();
         for (; indexToStart < arrayOfChars.length; indexToStart++) {
             char charToCheck = arrayOfChars[indexToStart];
             if (openingBrackets.isEmpty() &&
-                    (SetOfClosing.contains(charToCheck) || charToCheck == delimiter)) {
+                    (mapOfParenthesis.containsValue(charToCheck) || charToCheck == delimiter)) {
                 return resultString.toString();
             }
             resultString.append(charToCheck);
-            if (SetOfClosing.contains(charToCheck)) {
-                openingBrackets.pollLast();
+            if (mapOfParenthesis.containsValue(charToCheck)) {
+                char openBracket = openingBrackets.pollLast();
+                if (charToCheck != mapOfParenthesis.get(openBracket)) {
+                    throw new InvalidPreferencesFormatException(
+                            String.format("Expected: %s , but was: %s",mapOfParenthesis.get(openBracket),charToCheck));
+                }
                 if (openingBrackets.isEmpty()) {
                     return resultString.toString();
                 }
             }
-            if (SetOfOpening.contains(charToCheck)) {
+            if (mapOfParenthesis.containsKey(charToCheck)) {
                 openingBrackets.add(charToCheck);
             }
         }
         return resultString.toString();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        StringParser that = (StringParser) o;
+
+        if (delimiter != that.delimiter) return false;
+        return Objects.equals(mapOfParenthesis, that.mapOfParenthesis);
+    }
+
+    @Override
+    public int hashCode() {
+        int result = mapOfParenthesis != null ? mapOfParenthesis.hashCode() : 0;
+        result = 31 * result + (int) delimiter;
+        return result;
+    }
+
+    @Override
+    public String toString() {
+        return "StringParser{" +
+                "mapOfParenthesis=" + mapOfParenthesis +
+                ", delimiter=" + delimiter +
+                '}';
     }
 }

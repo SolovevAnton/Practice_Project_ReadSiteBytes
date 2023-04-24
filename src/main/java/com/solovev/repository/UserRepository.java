@@ -1,12 +1,13 @@
 package com.solovev.repository;
 
+import com.solovev.util.StringParser;
+
 import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
+import java.util.prefs.InvalidPreferencesFormatException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -15,9 +16,18 @@ import java.util.regex.Pattern;
  */
 public class UserRepository {
     private final String result;
+    /**
+     * Map used to define pairs of open close parenthesis, where Keys - are open parenthesis, and Values closed; default : {{=}, [=]}
+     */
+    private Map<Character, Character> mapOfParenthesis = new HashMap<>();
+    /**
+     * Delimiter used to separate values in file. By default, is ','
+     */
+    private char delimiter = ',';
 
     /**
      * Constructor of the class, that reads all info from URL and puts it in the result string
+     * Map of open and closed parenthesis created by default : {{=}, [=]}
      *
      * @param urlIn string that represents absolute URL path
      * @throws MalformedURLException if URL path is incorrect
@@ -28,6 +38,8 @@ public class UserRepository {
         try (BufferedInputStream inStream = new BufferedInputStream(url.openStream())) {
             byte[] bytes = inStream.readAllBytes();
             result = new String(bytes);
+            mapOfParenthesis.put('{', '}');
+            mapOfParenthesis.put('[', ']');
         }
     }
 
@@ -38,19 +50,33 @@ public class UserRepository {
      *
      * @param string string to be searched, Case insensitive, format WITHOUT "
      * @return List off all found stings, that has this string as a key, or empty
+     * @throws InvalidPreferencesFormatException if parenthesis are Incorrect Example: "[[}]" will throw exception
      */
-    public List<String> find(String string) {
+    public List<String> find(String string) throws InvalidPreferencesFormatException {
         String stringTransform = "\"" + string + "\": ";
         Matcher matcher = Pattern
                 .compile(stringTransform, Pattern.CASE_INSENSITIVE)
                 .matcher(result);
         List<String> list = new ArrayList<>();
-
-        return null;
+        char[] resultAsArray = result.toCharArray();
+        StringParser parser = new StringParser(mapOfParenthesis, delimiter);
+        while (matcher.find()) {
+            int startOfParsingIndex = matcher.end();
+            list.add(parser.parse(resultAsArray, startOfParsingIndex));
+        }
+        return list;
     }
 
     public String getResult() {
         return result;
+    }
+
+    public void setMapOfParenthesis(Map<Character, Character> mapOfParenthesis) {
+        this.mapOfParenthesis = mapOfParenthesis;
+    }
+
+    public void setDelimiter(char delimiter) {
+        this.delimiter = delimiter;
     }
 
     @Override
@@ -60,18 +86,25 @@ public class UserRepository {
 
         UserRepository that = (UserRepository) o;
 
-        return Objects.equals(result, that.result);
+        if (delimiter != that.delimiter) return false;
+        if (!Objects.equals(result, that.result)) return false;
+        return Objects.equals(mapOfParenthesis, that.mapOfParenthesis);
     }
 
     @Override
     public int hashCode() {
-        return result != null ? result.hashCode() : 0;
+        int result1 = result != null ? result.hashCode() : 0;
+        result1 = 31 * result1 + (mapOfParenthesis != null ? mapOfParenthesis.hashCode() : 0);
+        result1 = 31 * result1 + (int) delimiter;
+        return result1;
     }
 
     @Override
     public String toString() {
         return "UserRepository{" +
                 "result='" + result + '\'' +
+                ", mapOfParenthesis=" + mapOfParenthesis +
+                ", delimiter=" + delimiter +
                 '}';
     }
 }
