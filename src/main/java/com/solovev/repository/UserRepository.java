@@ -7,9 +7,11 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.*;
+import java.util.function.Function;
 import java.util.prefs.InvalidPreferencesFormatException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 /**
  * Class to get all info from the given URL and return all info as a result
@@ -65,6 +67,22 @@ public class UserRepository {
             list.add(parser.parse(resultAsArray, startOfParsingIndex));
         }
         return list;
+    }
+
+    /**
+     * Method that calculates number of symbols in result String that are Keys or values in mapOfParenthesis
+     *
+     * @return Map with chars in mapOfParenthesis as keys and values the number of occurrences.
+     */
+    public Map<Character, Integer> buildMap() {
+        Map<Character, Long> parserMap = new StringParser(mapOfParenthesis, delimiter).buildMap(result);
+        Function<Map.Entry<Character, Long>, Integer> convertLongToInt = entry -> entry.getValue().intValue();
+
+        return parserMap
+                .entrySet()
+                .stream()
+                .collect(Collectors.toMap(Map.Entry::getKey,
+                        convertLongToInt));
     }
 
     public String getResult() {

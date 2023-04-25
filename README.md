@@ -1,7 +1,7 @@
 # Practice_Project_ReadSiteBytes
 
 Small Java project about working with URL and Streams IO
-
+done in 5h
 ## Task
 
 1. Create a ReadSiteBytes project

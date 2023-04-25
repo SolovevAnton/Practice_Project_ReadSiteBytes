@@ -1,10 +1,10 @@
 package com.solovev.util;
 
-import java.util.ArrayDeque;
-import java.util.Deque;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
+import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.prefs.InvalidPreferencesFormatException;
+import java.util.stream.Collectors;
 
 /**
  * A Class to pass through Json strings and create Strings of separate objects or arrays
@@ -48,7 +48,7 @@ public class StringParser {
                 char openBracket = openingBrackets.pollLast();
                 if (charToCheck != mapOfParenthesis.get(openBracket)) {
                     throw new InvalidPreferencesFormatException(
-                            String.format("Expected: %s , but was: %s",mapOfParenthesis.get(openBracket),charToCheck));
+                            String.format("Expected: %s , but was: %s", mapOfParenthesis.get(openBracket), charToCheck));
                 }
                 if (openingBrackets.isEmpty()) {
                     return resultString.toString();
@@ -59,6 +59,26 @@ public class StringParser {
             }
         }
         return resultString.toString();
+    }
+
+    /**
+     * Method that calculates number of symbols that are Keys or values in mapOfParenthesis.
+     *
+     * @param string - string to be analyzed
+     * @return Map with chars in mapOfParenthesis as keys and values the number of occurrences.
+     */
+    public Map<Character, Long> buildMap(String string) {
+        Predicate<Character> isInMap = c -> mapOfParenthesis.containsKey(c) || mapOfParenthesis.containsValue(c);
+        Function<Map.Entry<Character, List<Character>>, Integer> getCount = entry -> entry
+                .getValue()
+                .size();
+
+        return string
+                .chars()
+                .mapToObj(c -> (char) c)
+                .filter(isInMap)
+                .collect(Collectors.groupingBy(Function.identity(),
+                        Collectors.counting()));
     }
 
     @Override

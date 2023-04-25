@@ -18,7 +18,6 @@ public class Main {
                 "address",
                 "lng"
         };
-        //TODO #6 from the task + tests for it
         try {
             UserRepository userRepository = new UserRepository(correctURL);
 //            UserRepository errorRepository = new UserRepository(inCorrectUrl); //this line will throw exception
@@ -27,6 +26,7 @@ public class Main {
             System.out.println("\n Result for: " + s);
             System.out.println(userRepository.find(s));
             }
+            System.out.println(userRepository.buildMap());
 
         } catch (InvalidPreferencesFormatException |
                  IOException e) { // why this is better than to throw out of the method?
